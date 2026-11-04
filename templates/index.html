@@ -1,0 +1,292 @@
+{% extends 'base.html' %}
+
+{% block title %}Home - AWS Cloud Internship Portal{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section text-center text-md-start">
+    <div class="container-fluid px-lg-5">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-8">
+                <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-dark border border-secondary mb-3">
+                    <span class="badge bg-primary">AWS Certified Cloud Architecture</span>
+                    <span class="text-info small fw-medium">Student Internship Portal</span>
+                </div>
+                <h1 class="hero-title mb-3">
+                    Full-Stack Cloud Architecture &amp; Management Portal
+                </h1>
+                <p class="hero-subtitle">
+                    A production-ready student portal engineered on Amazon Web Services featuring Custom VPC networking, Linux EC2 application hosting, IAM role-based least-privilege security, S3 storage, automated CloudWatch alarms, and python web access log analytics.
+                </p>
+                <div class="d-flex flex-wrap gap-3 justify-content-center justify-content-md-start">
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-lg px-4 shadow-sm fw-semibold d-flex align-items-center gap-2">
+                        <i class="bi bi-speedometer2"></i> Explore Dashboard
+                    </a>
+                    <a href="{{ url_for('project_info') }}" class="btn btn-outline-light btn-lg px-4 fw-medium d-flex align-items-center gap-2">
+                        <i class="bi bi-diagram-3"></i> System Architecture
+                    </a>
+                    <a href="{{ url_for('log_analysis') }}" class="btn btn-outline-info btn-lg px-4 fw-medium d-flex align-items-center gap-2">
+                        <i class="bi bi-bar-chart"></i> Log Analytics
+                    </a>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 text-center">
+                <div class="p-4 rounded-4 bg-dark bg-opacity-50 border border-secondary border-opacity-50 shadow-lg">
+                    <div class="text-start mb-3">
+                        <span class="text-info fw-bold small text-uppercase letter-spacing-1">Live Telemetry Status</span>
+                        <div class="text-white fs-5 fw-bold mt-1">AWS EC2 Web Host</div>
+                    </div>
+                    <div class="d-flex flex-column gap-2 text-start small mb-3">
+                        <div class="d-flex justify-content-between p-2 rounded bg-black bg-opacity-25">
+                            <span class="text-muted">Instance State:</span>
+                            <span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i> Running</span>
+                        </div>
+                        <div class="d-flex justify-content-between p-2 rounded bg-black bg-opacity-25">
+                            <span class="text-muted">Instance Type:</span>
+                            <span class="text-white">{{ ec2.instance_type }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between p-2 rounded bg-black bg-opacity-25">
+                            <span class="text-muted">Public Endpoint:</span>
+                            <code class="text-info">{{ ec2.public_ip }}</code>
+                        </div>
+                        <div class="d-flex justify-content-between p-2 rounded bg-black bg-opacity-25">
+                            <span class="text-muted">Data Source:</span>
+                            <span class="badge {% if ec2.is_live_aws %}bg-success{% else %}bg-primary{% endif %}">
+                                {{ ec2.data_source }}
+                            </span>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('aws_monitoring') }}" class="btn btn-sm btn-outline-info w-100">
+                        View Complete AWS Telemetry <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Project Introduction & Quick Highlights -->
+<section class="py-5">
+    <div class="container-fluid px-lg-5">
+        <div class="row g-4 align-items-center mb-5">
+            <div class="col-lg-6">
+                <h6 class="text-primary fw-bold text-uppercase letter-spacing-1">Project Background</h6>
+                <h2 class="fw-bold mb-3">Enterprise Cloud Architecture Built for Resiliency and Security</h2>
+                <p class="text-muted leading-relaxed">
+                    This project delivers an enterprise-grade Student Internship Portal built from the ground up to demonstrate best practices in cloud architecture, network isolation, security policies, and DevOps automation on <strong>Amazon Web Services (AWS)</strong>.
+                </p>
+                <p class="text-muted leading-relaxed">
+                    Rather than relying on default VPC configurations or unmonitored deployments, this infrastructure deploys a <strong>dedicated Custom VPC</strong> with controlled routing, isolated security groups, <strong>zero hardcoded credentials</strong> via IAM instance roles, automated <strong>EBS snapshot disaster recovery</strong>, and real-time <strong>Amazon CloudWatch</strong> alarming.
+                </p>
+            </div>
+            <div class="col-lg-6">
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+                            <i class="bi bi-shield-lock-fill text-primary fs-3 mb-2 d-block"></i>
+                            <h6 class="fw-bold mb-1">IAM Least Privilege</h6>
+                            <p class="text-muted small mb-0">Role-based temporary credentials via STS instance profile without exposing static AWS secret keys.</p>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+                            <i class="bi bi-diagram-2-fill text-info fs-3 mb-2 d-block"></i>
+                            <h6 class="fw-bold mb-1">Isolated Custom VPC</h6>
+                            <p class="text-muted small mb-0">VPC CIDR <code>10.0.0.0/16</code> with dedicated public subnet <code>10.0.1.0/24</code> and custom route table.</p>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+                            <i class="bi bi-bell-fill text-warning fs-3 mb-2 d-block"></i>
+                            <h6 class="fw-bold mb-1">CloudWatch &amp; SNS</h6>
+                            <p class="text-muted small mb-0">Automated CPU &gt; 70% threshold alarms with instant SNS email alerts to administrator.</p>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+                            <i class="bi bi-piggy-bank-fill text-success fs-3 mb-2 d-block"></i>
+                            <h6 class="fw-bold mb-1">Cost Control &amp; Budgets</h6>
+                            <p class="text-muted small mb-0">100% Free Tier compliant design avoiding expensive NAT Gateways, ALBs, or RDS instances.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AWS Services Overview Grid (8 Key Services) -->
+        <div class="mb-5">
+            <div class="text-center mb-4">
+                <h6 class="text-primary fw-bold text-uppercase letter-spacing-1">AWS Cloud Services Ecosystem</h6>
+                <h2 class="fw-bold">Architectural Components Deployed</h2>
+                <p class="text-muted">A cohesive suite of AWS managed services powering portal operations, storage, and reliability</p>
+            </div>
+
+            <div class="row g-4">
+                <!-- 1. Custom VPC -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="service-card shadow-sm">
+                        <div class="service-icon-wrapper bg-primary bg-opacity-10 text-primary">
+                            <i class="bi bi-diagram-3-fill"></i>
+                        </div>
+                        <h5 class="fw-bold mb-2">Custom AWS VPC</h5>
+                        <p class="text-muted small flex-grow-1">
+                            Network boundary with <code>10.0.0.0/16</code> CIDR, custom Internet Gateway (IGW), and route table mapping to public subnet <code>10.0.1.0/24</code>.
+                        </p>
+                        <span class="badge bg-light text-primary border">Networking Layer</span>
+                    </div>
+                </div>
+
+                <!-- 2. Amazon EC2 -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="service-card shadow-sm">
+                        <div class="service-icon-wrapper bg-warning bg-opacity-10 text-warning">
+                            <i class="bi bi-cpu-fill"></i>
+                        </div>
+                        <h5 class="fw-bold mb-2">Amazon EC2</h5>
+                        <p class="text-muted small flex-grow-1">
+                            Free-tier eligible Linux compute instance running Ubuntu, Python Flask, Gunicorn application server, and Nginx reverse proxy.
+                        </p>
+                        <span class="badge bg-light text-warning border">Compute Layer</span>
+                    </div>
+                </div>
+
+                <!-- 3. Amazon S3 -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="service-card shadow-sm">
+                        <div class="service-icon-wrapper bg-success bg-opacity-10 text-success">
+                            <i class="bi bi-bucket-fill"></i>
+                        </div>
+                        <h5 class="fw-bold mb-2">Amazon S3</h5>
+                        <p class="text-muted small flex-grow-1">
+                            Private object storage bucket for web access logs, student dataset archives, and assets with strict Block Public Access enabled.
+                        </p>
+                        <span class="badge bg-light text-success border">Object Storage</span>
+                    </div>
+                </div>
+
+                <!-- 4. AWS IAM -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="service-card shadow-sm">
+                        <div class="service-icon-wrapper bg-danger bg-opacity-10 text-danger">
+                            <i class="bi bi-shield-lock-fill"></i>
+                        </div>
+                        <h5 class="fw-bold mb-2">AWS IAM Roles</h5>
+                        <p class="text-muted small flex-grow-1">
+                            Granular least-privilege instance profile granting EC2 scoped access to S3 (GetObject, PutObject, ListBucket) without hardcoded keys.
+                        </p>
+                        <span class="badge bg-light text-danger border">Security &amp; Auth</span>
+                    </div>
+                </div>
+
+                <!-- 5. Amazon CloudWatch -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="service-card shadow-sm">
+                        <div class="service-icon-wrapper bg-info bg-opacity-10 text-info">
+                            <i class="bi bi-speedometer"></i>
+                        </div>
+                        <h5 class="fw-bold mb-2">Amazon CloudWatch</h5>
+                        <p class="text-muted small flex-grow-1">
+                            Monitors EC2 CPU utilization, disk metrics, and system status checks. Configured with automated metric threshold alarms.
+                        </p>
+                        <span class="badge bg-light text-info border">Monitoring Layer</span>
+                    </div>
+                </div>
+
+                <!-- 6. Amazon SNS -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="service-card shadow-sm">
+                        <div class="service-icon-wrapper bg-secondary bg-opacity-10 text-secondary">
+                            <i class="bi bi-envelope-check-fill"></i>
+                        </div>
+                        <h5 class="fw-bold mb-2">Amazon SNS</h5>
+                        <p class="text-muted small flex-grow-1">
+                            Simple Notification Service topic delivering instantaneous email alerts when CloudWatch detects high CPU or status check failures.
+                        </p>
+                        <span class="badge bg-light text-secondary border">Notification Layer</span>
+                    </div>
+                </div>
+
+                <!-- 7. EBS Snapshots -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="service-card shadow-sm">
+                        <div class="service-icon-wrapper bg-dark bg-opacity-10 text-dark">
+                            <i class="bi bi-hdd-stack-fill"></i>
+                        </div>
+                        <h5 class="fw-bold mb-2">EBS Snapshots</h5>
+                        <p class="text-muted small flex-grow-1">
+                            Automated point-in-time volume backups capturing OS, code, and configurations for disaster recovery and instant state restoration.
+                        </p>
+                        <span class="badge bg-light text-dark border">Disaster Recovery</span>
+                    </div>
+                </div>
+
+                <!-- 8. AWS Budgets -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="service-card shadow-sm">
+                        <div class="service-icon-wrapper bg-success bg-opacity-10 text-success">
+                            <i class="bi bi-cash-coin"></i>
+                        </div>
+                        <h5 class="fw-bold mb-2">AWS Budgets</h5>
+                        <p class="text-muted small flex-grow-1">
+                            Cost control safeguards establishing a $1.00 USD monthly budget with automated email alerts at 85% and 100% threshold consumption.
+                        </p>
+                        <span class="badge bg-light text-success border">Cost Governance</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Project Objectives & Outcomes -->
+        <div class="portal-card p-4 p-md-5 mb-4">
+            <div class="row g-4 align-items-center">
+                <div class="col-lg-6">
+                    <h6 class="text-primary fw-bold text-uppercase letter-spacing-1">Internship Mandate</h6>
+                    <h3 class="fw-bold mb-3">Core Project Objectives &amp; Deliverables</h3>
+                    <ul class="list-unstyled d-flex flex-column gap-3 mb-0">
+                        <li class="d-flex align-items-start gap-2">
+                            <i class="bi bi-check-circle-fill text-success fs-5 mt-1"></i>
+                            <div>
+                                <strong>Custom Network Topology:</strong> Build an isolated AWS VPC, configure public subnets, attach Internet Gateway, and enforce strict security groups.
+                            </div>
+                        </li>
+                        <li class="d-flex align-items-start gap-2">
+                            <i class="bi bi-check-circle-fill text-success fs-5 mt-1"></i>
+                            <div>
+                                <strong>Linux Web Application Deployment:</strong> Deploy Python Flask with Gunicorn service manager behind an Nginx reverse proxy on EC2.
+                            </div>
+                        </li>
+                        <li class="d-flex align-items-start gap-2">
+                            <i class="bi bi-check-circle-fill text-success fs-5 mt-1"></i>
+                            <div>
+                                <strong>Role-Based S3 Integration:</strong> Secure private object bucket communication strictly through IAM instance profiles with zero credentials hardcoded.
+                            </div>
+                        </li>
+                        <li class="d-flex align-items-start gap-2">
+                            <i class="bi bi-check-circle-fill text-success fs-5 mt-1"></i>
+                            <div>
+                                <strong>Log Analytics &amp; Visualization:</strong> Develop a standalone Python analytics engine parsing 750+ web access logs with interactive Chart.js dashboards.
+                            </div>
+                        </li>
+                        <li class="d-flex align-items-start gap-2">
+                            <i class="bi bi-check-circle-fill text-success fs-5 mt-1"></i>
+                            <div>
+                                <strong>Automated Monitoring &amp; Cost Control:</strong> Configure CloudWatch alarms, SNS notifications, EBS snapshot backup drills, and AWS Budget thresholds.
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-lg-6 text-center">
+                    <div class="p-3 bg-light rounded-4 border">
+                        <img src="{{ url_for('static', filename='images/architecture.svg') }}" alt="AWS Architecture Overview" class="img-fluid rounded-3 shadow-sm">
+                        <div class="small text-muted mt-2">
+                            <i class="bi bi-zoom-in"></i> Architectural Flow: Custom VPC &rarr; EC2 &rarr; S3 &amp; CloudWatch
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+{% endblock %}

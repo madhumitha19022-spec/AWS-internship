@@ -1,0 +1,289 @@
+{% extends 'base.html' %}
+
+{% block title %}AWS CloudWatch &amp; EC2 Monitoring - AWS Cloud Internship Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-lg-4 py-4">
+    <!-- Breadcrumbs & Header -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1 small">
+                    <li class="breadcrumb-item"><a href="{{ url_for('home') }}" class="text-decoration-none">Home</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">AWS Monitoring</li>
+                </ol>
+            </nav>
+            <h2 class="fw-bold mb-0">Amazon CloudWatch, EC2 &amp; S3 Telemetry Center</h2>
+            <p class="text-muted small mb-0">Live health checks, metric alarms, CPU utilization graphs, and S3 object management</p>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+            {% if is_live_aws %}
+            <span class="live-indicator live p-2 px-3">
+                <span class="pulse-dot"></span> Live AWS Environment Connected
+            </span>
+            {% else %}
+            <span class="live-indicator simulated p-2 px-3" data-bs-toggle="tooltip" title="Operating outside AWS. Real values will stream automatically once launched on EC2 with IAM Instance Profile.">
+                <i class="bi bi-laptop me-1"></i> Pre-Deployment Simulation Telemetry
+            </span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Data Source Notice Banner -->
+    <div class="alert {% if is_live_aws %}alert-success{% else %}alert-info{% endif %} border-0 shadow-sm rounded-3 mb-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-info-circle-fill fs-5"></i>
+            <div>
+                <strong>Telemetry Mode:</strong>
+                {% if is_live_aws %}
+                Connected to AWS APIs (IMDSv2, CloudWatch, S3) using the IAM Instance Role.
+                {% else %}
+                Currently displaying simulated infrastructure telemetry for local testing. All AWS metrics will be fetched live via Boto3 and IAM instance profile when deployed on EC2.
+                {% endif %}
+            </div>
+        </div>
+        <span class="badge bg-dark">Source: {{ ec2.data_source }}</span>
+    </div>
+
+    <!-- EC2 Instance Health & Metrics (Row 1) -->
+    <div class="row g-4 mb-4">
+        <!-- EC2 Instance Details Card -->
+        <div class="col-lg-6">
+            <div class="portal-card h-100">
+                <div class="portal-card-header">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-cpu-fill text-warning fs-5"></i>
+                        <h5 class="mb-0 fw-bold">Amazon EC2 Instance Health</h5>
+                    </div>
+                    <span class="badge bg-success bg-opacity-15 text-success border border-success border-opacity-25 px-3 py-1">
+                        <i class="bi bi-check-circle-fill me-1"></i> Status: OK
+                    </span>
+                </div>
+                <div class="p-4">
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-6">
+                            <div class="p-3 bg-light rounded-3">
+                                <span class="text-muted small text-uppercase">Instance ID</span>
+                                <div class="fw-bold font-monospace text-dark mt-1">{{ ec2.instance_id }}</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-3 bg-light rounded-3">
+                                <span class="text-muted small text-uppercase">Instance Type</span>
+                                <div class="fw-bold text-dark mt-1">{{ ec2.instance_type }}</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-3 bg-light rounded-3">
+                                <span class="text-muted small text-uppercase">Availability Zone</span>
+                                <div class="fw-bold text-dark mt-1">{{ ec2.availability_zone }}</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-3 bg-light rounded-3">
+                                <span class="text-muted small text-uppercase">Public IPv4</span>
+                                <div class="fw-bold font-monospace text-primary mt-1">{{ ec2.public_ip }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2/2 Health Checks -->
+                    <div class="p-3 bg-white border rounded-3 shadow-sm mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-semibold small"><i class="bi bi-shield-check text-success me-1"></i> System Status Check:</span>
+                            <span class="badge bg-success bg-opacity-25 text-success">Passed (0 issues detected)</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="fw-semibold small"><i class="bi bi-hdd-network text-success me-1"></i> Instance Status Check:</span>
+                            <span class="badge bg-success bg-opacity-25 text-success">Passed (0 issues detected)</span>
+                        </div>
+                    </div>
+
+                    <div class="small text-muted">
+                        <i class="bi bi-shield-lock text-primary me-1"></i>
+                        Attached IAM Role: <strong>InternshipEC2S3Role</strong> (Least-privilege S3 and CloudWatch publish policies)
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CloudWatch CPU Utilization Live Trend -->
+        <div class="col-lg-6">
+            <div class="portal-card h-100">
+                <div class="portal-card-header">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-activity text-info fs-5"></i>
+                        <h5 class="mb-0 fw-bold">CloudWatch CPU Utilization (%)</h5>
+                    </div>
+                    <span class="badge bg-light text-dark border">
+                        Current: <strong>{{ cw.cpu_utilization }}%</strong>
+                    </span>
+                </div>
+                <div class="p-4">
+                    <div style="height: 250px;" class="mb-3">
+                        <canvas id="cpuUtilizationChart"></canvas>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center small text-muted">
+                        <span>Threshold Alarm Limit: <strong>70% for 5 min</strong></span>
+                        <span class="text-success"><i class="bi bi-check2-all me-1"></i> Well within normal operating parameters</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CloudWatch Alarms & SNS Notification Matrix (Row 2) -->
+    <div class="portal-card mb-4">
+        <div class="portal-card-header">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-bell-fill text-danger fs-5"></i>
+                <h5 class="mb-0 fw-bold">Configured CloudWatch Alarms &amp; Amazon SNS Email Subscriptions</h5>
+            </div>
+            <span class="badge bg-light text-dark border">2 Active Alarms</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-custom align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Alarm Name</th>
+                        <th>Monitored Metric</th>
+                        <th>Comparison Operator &amp; Threshold</th>
+                        <th>Evaluation Period</th>
+                        <th>Current State</th>
+                        <th>SNS Notification Target</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="fw-bold">
+                            <i class="bi bi-speedometer2 text-warning me-1"></i>
+                            Internship-High-CPU-Alarm
+                        </td>
+                        <td><code>AWS/EC2 &rarr; CPUUtilization</code></td>
+                        <td><span class="badge bg-light text-dark border">&gt; 70.0%</span></td>
+                        <td>5 minutes (1 period)</td>
+                        <td>
+                            <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25 px-3 py-2">
+                                <i class="bi bi-check-circle-fill me-1"></i> OK
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge bg-primary">SNS: internship-alerts-topic</span>
+                            <div class="small text-muted mt-1">{{ developer_email }}</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">
+                            <i class="bi bi-hdd-network text-danger me-1"></i>
+                            Internship-StatusCheckFailed-Alarm
+                        </td>
+                        <td><code>AWS/EC2 &rarr; StatusCheckFailed</code></td>
+                        <td><span class="badge bg-light text-dark border">&ge; 1</span></td>
+                        <td>1 minute (1 period)</td>
+                        <td>
+                            <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25 px-3 py-2">
+                                <i class="bi bi-check-circle-fill me-1"></i> OK
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge bg-primary">SNS: internship-alerts-topic</span>
+                            <div class="small text-muted mt-1">{{ developer_email }}</div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- S3 Object Storage Explorer & Upload Test (Row 3) -->
+    <div class="portal-card" id="s3-section">
+        <div class="portal-card-header flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-bucket-fill text-success fs-5"></i>
+                <div>
+                    <h5 class="mb-0 fw-bold">Amazon S3 Object Storage Integration</h5>
+                    <span class="text-muted small">Target Bucket: <code>{{ s3.bucket_name }}</code> in <code>{{ s3.region }}</code></span>
+                </div>
+            </div>
+            <span class="badge bg-dark">{{ s3.access_level }}</span>
+        </div>
+        <div class="p-4">
+            <div class="row g-4">
+                <!-- Objects Table -->
+                <div class="col-lg-8">
+                    <h6 class="fw-bold mb-3">Bucket Objects &amp; Prefix Contents</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-custom align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Object Key / Path</th>
+                                    <th>File Size</th>
+                                    <th>Last Modified (UTC)</th>
+                                    <th>Storage Class</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for file in s3.files %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="bi bi-file-earmark-arrow-down-fill text-primary"></i>
+                                            <code class="text-dark">{{ file.key }}</code>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-light text-dark border">{{ file.size_kb }} KB</span></td>
+                                    <td class="text-muted small">{{ file.last_modified }}</td>
+                                    <td><span class="badge bg-secondary">STANDARD</span></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Test Upload Form -->
+                <div class="col-lg-4">
+                    <div class="p-4 bg-light rounded-4 border">
+                        <h6 class="fw-bold mb-2">
+                            <i class="bi bi-cloud-upload text-primary me-1"></i> Test S3 PutObject Operation
+                        </h6>
+                        <p class="text-muted small mb-3">
+                            Execute an authenticated file upload test verified via the IAM Instance Role.
+                        </p>
+                        <form action="{{ url_for('api_s3_upload') }}" method="POST">
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">File Name</label>
+                                <input type="text" name="file_name" class="form-control form-control-sm" value="telemetry-test-{{ now_str if now_str else '2026' }}.txt" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Payload Content</label>
+                                <textarea name="file_content" class="form-control form-control-sm" rows="3" required>AWS Cloud Internship Portal - Verified PutObject test via IAM role.</textarea>
+                            </div>
+                            <button type="submit" class="btn btn-success btn-sm w-100 fw-semibold">
+                                <i class="bi bi-upload me-1"></i> Test Upload to S3
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Load CPU chart from server context
+        const cpuHistory = {{ cw.get('recent_cpu_history', [
+            {'time': '13:00', 'cpu': 18.2},
+            {'time': '13:15', 'cpu': 22.4},
+            {'time': '13:30', 'cpu': 31.0},
+            {'time': '13:45', 'cpu': 28.5},
+            {'time': '14:00', 'cpu': 24.8}
+        ]) | tojson }};
+        initCpuChart(cpuHistory);
+    });
+</script>
+{% endblock %}

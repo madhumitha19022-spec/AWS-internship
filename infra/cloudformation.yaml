@@ -1,0 +1,361 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  AWS Cloud Internship Project: Student Internship Portal
+  Automated Infrastructure Template: Custom VPC + EC2 Web Application +
+  S3 Storage + IAM Instance Role + CloudWatch Alarms + SNS + Budgets.
+
+Parameters:
+  KeyName:
+    Description: Name of an existing EC2 KeyPair to enable SSH access
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: internship-key
+    ConstraintDescription: Must be the name of an existing EC2 KeyPair.
+
+  AdminIpCIDR:
+    Description: Your public IPv4 CIDR block for SSH access (e.g. 203.0.113.50/32). Default allows 0.0.0.0/0 for initial access.
+    Type: String
+    Default: 0.0.0.0/0
+
+  NotificationEmail:
+    Description: Email address to receive CloudWatch alarm notifications via Amazon SNS
+    Type: String
+    Default: madhumitha19022@gmail.com
+
+  InstanceType:
+    Description: EC2 Instance Type (Free Tier Eligible)
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro
+      - t3.micro
+
+Resources:
+  # =========================================================================
+  # 1. NETWORKING LAYER (Custom AWS VPC)
+  # =========================================================================
+  InternshipVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: internship-vpc
+        - Key: Project
+          Value: AWS-Internship-Portal
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: internship-igw
+
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref InternshipVPC
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref InternshipVPC
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: !Select [0, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: internship-public-subnet-1
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref InternshipVPC
+      Tags:
+        - Key: Name
+          Value: internship-public-rt
+
+  DefaultPublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  SubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      RouteTableId: !Ref PublicRouteTable
+
+  # =========================================================================
+  # 2. SECURITY GROUP
+  # =========================================================================
+  WebServerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable HTTP access from anywhere and SSH from admin IP
+      VpcId: !Ref InternshipVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: Allow public HTTP web traffic
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref AdminIpCIDR
+          Description: Allow SSH access strictly from admin
+      Tags:
+        - Key: Name
+          Value: internship-web-sg
+
+  # =========================================================================
+  # 3. STORAGE LAYER (Amazon S3)
+  # =========================================================================
+  PortalS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'aws-internship-portal-madhumitha-${AWS::AccountId}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      Tags:
+        - Key: Name
+          Value: internship-portal-s3-bucket
+
+  # =========================================================================
+  # 4. SECURITY & IAM LAYER (Least-Privilege EC2 Instance Role)
+  # =========================================================================
+  EC2InternshipRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub 'EC2-Internship-Portal-Role-${AWS::Region}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: InternshipS3LeastPrivilegePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                Resource: !GetAtt PortalS3Bucket.Arn
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                Resource: !Sub '${PortalS3Bucket.Arn}/*'
+              - Effect: Allow
+                Action:
+                  - cloudwatch:PutMetricData
+                  - cloudwatch:GetMetricData
+                  - cloudwatch:DescribeAlarms
+                  - ec2:DescribeInstances
+                Resource: '*'
+
+  EC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref EC2InternshipRole
+
+  # =========================================================================
+  # 5. NOTIFICATION & MONITORING (CloudWatch & SNS)
+  # =========================================================================
+  AlertsSNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: internship-alerts-topic
+      Subscription:
+        - Endpoint: !Ref NotificationEmail
+          Protocol: email
+
+  HighCPUAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: Internship-High-CPU-Alarm
+      AlarmDescription: Trigger alarm if CPU utilization exceeds 70% for 5 minutes
+      Namespace: AWS/EC2
+      MetricName: CPUUtilization
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 70.0
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: InstanceId
+          Value: !Ref WebServerInstance
+      AlarmActions:
+        - !Ref AlertsSNSTopic
+      OKActions:
+        - !Ref AlertsSNSTopic
+
+  StatusCheckFailedAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: Internship-StatusCheckFailed-Alarm
+      AlarmDescription: Trigger alarm if EC2 status checks fail
+      Namespace: AWS/EC2
+      MetricName: StatusCheckFailed
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1.0
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: InstanceId
+          Value: !Ref WebServerInstance
+      AlarmActions:
+        - !Ref AlertsSNSTopic
+      OKActions:
+        - !Ref AlertsSNSTopic
+
+  # =========================================================================
+  # 6. COMPUTE LAYER (EC2 Linux Instance)
+  # =========================================================================
+  WebServerInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      SubnetId: !Ref PublicSubnet
+      SecurityGroupIds:
+        - !Ref WebServerSecurityGroup
+      IamInstanceProfile: !Ref EC2InstanceProfile
+      # Latest Ubuntu 24.04 LTS AMI dynamic mapping via SSM parameter
+      ImageId: !Ref LatestUbuntuAmi
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeSize: 15
+            VolumeType: gp3
+            DeleteOnTermination: true
+      Tags:
+        - Key: Name
+          Value: Internship-WebServer-EC2
+        - Key: Project
+          Value: AWS-Internship-Portal
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          set -e
+          exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+          echo "==== Starting Automated Internship Portal Provisioning ===="
+
+          # Update and install required packages
+          apt-get update -y
+          apt-get install -y python3-pip python3-venv git nginx curl
+
+          # Clone application from GitHub repository
+          mkdir -p /var/www
+          cd /var/www
+          git clone https://github.com/madhumitha19022-spec/AWS-internship.git
+          cd AWS-internship
+
+          # Create virtual environment and install dependencies
+          python3 -m venv venv
+          ./venv/bin/pip install --upgrade pip
+          ./venv/bin/pip install -r requirements.txt
+
+          # Configure environment
+          cat <<EOT > .env
+          AWS_REGION=${AWS::Region}
+          S3_BUCKET_NAME=aws-internship-portal-madhumitha-${AWS::AccountId}
+          FLASK_DEBUG=False
+          PORT=5000
+          HOST=127.0.0.1
+          EOT
+
+          # Create systemd service for Gunicorn
+          cat <<EOT > /etc/systemd/system/internship-portal.service
+          [Unit]
+          Description=Gunicorn instance to serve AWS Internship Portal
+          After=network.target
+
+          [Service]
+          User=root
+          WorkingDirectory=/var/www/AWS-internship
+          EnvironmentFile=/var/www/AWS-internship/.env
+          ExecStart=/var/www/AWS-internship/venv/bin/gunicorn --workers 3 --bind 127.0.0.1:5000 app:app
+          Restart=always
+
+          [Install]
+          WantedBy=multi-user.target
+          EOT
+
+          # Start and enable systemd service
+          systemctl daemon-reload
+          systemctl start internship-portal
+          systemctl enable internship-portal
+
+          # Configure Nginx Reverse Proxy
+          cat <<EOT > /etc/nginx/sites-available/internship-portal
+          server {
+              listen 80;
+              server_name _;
+
+              location / {
+                  proxy_pass http://127.0.0.1:5000;
+                  proxy_set_header Host \$host;
+                  proxy_set_header X-Real-IP \$remote_addr;
+                  proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto \$scheme;
+              }
+          }
+          EOT
+
+          # Enable Nginx site and restart
+          rm -f /etc/nginx/sites-enabled/default
+          ln -sf /etc/nginx/sites-available/internship-portal /etc/nginx/sites-enabled/
+          systemctl restart nginx
+
+          echo "==== Provisioning Complete! Portal is Live on Port 80 ===="
+
+Parameters:
+  LatestUbuntuAmi:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id
+    Description: Resolves the latest official Ubuntu 24.04 LTS AMI in the active region
+
+Outputs:
+  VPCId:
+    Description: Custom VPC ID
+    Value: !Ref InternshipVPC
+  PublicSubnetId:
+    Description: Public Subnet ID
+    Value: !Ref PublicSubnet
+  InstanceId:
+    Description: EC2 Instance ID
+    Value: !Ref WebServerInstance
+  PublicIPv4:
+    Description: EC2 Public IP Address
+    Value: !GetAtt WebServerInstance.PublicIp
+  WebPortalURL:
+    Description: Live Student Internship Portal Public URL
+    Value: !Sub 'http://${WebServerInstance.PublicIp}'
+  S3Bucket:
+    Description: S3 Storage Bucket
+    Value: !Ref PortalS3Bucket
+  SNSTopic:
+    Description: SNS Alerts Topic ARN
+    Value: !Ref AlertsSNSTopic

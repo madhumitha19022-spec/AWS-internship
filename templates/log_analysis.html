@@ -1,0 +1,302 @@
+{% extends 'base.html' %}
+
+{% block title %}Log Analysis - AWS Cloud Internship Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-lg-4 py-4">
+    <!-- Breadcrumbs & Header -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1 small">
+                    <li class="breadcrumb-item"><a href="{{ url_for('home') }}" class="text-decoration-none">Home</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Log Analysis</li>
+                </ol>
+            </nav>
+            <h2 class="fw-bold mb-0">Web Access Log Analytics &amp; Error Diagnostic Engine</h2>
+            <p class="text-muted small mb-0">
+                Detailed metrics extracted from <code>data/web-access-logs.csv</code> via <code>analyze_logs.py</code>
+            </p>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-warning bg-opacity-15 text-warning border border-warning border-opacity-25 p-2 px-3">
+                <i class="bi bi-info-circle-fill me-1"></i> Data Source: Sample Test Dataset (750 Records)
+            </span>
+        </div>
+    </div>
+
+    <!-- 4 KPI Metrics for Log Analysis -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-xl-3">
+            <div class="metric-card">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="metric-label">Total Logged Requests</div>
+                        <div class="metric-val text-primary">{{ summary.total_requests }}</div>
+                    </div>
+                    <div class="icon-box bg-primary bg-opacity-10 text-primary">
+                        <i class="bi bi-file-earmark-bar-graph"></i>
+                    </div>
+                </div>
+                <div class="mt-3 small text-muted">
+                    Total Bandwidth: <strong>{{ summary.total_bandwidth_mb }} MB</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+            <div class="metric-card">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="metric-label">Peak Traffic Hour</div>
+                        <div class="metric-val text-warning">{{ summary.peak_traffic_hour }}</div>
+                    </div>
+                    <div class="icon-box bg-warning bg-opacity-10 text-warning">
+                        <i class="bi bi-fire"></i>
+                    </div>
+                </div>
+                <div class="mt-3 small text-muted">
+                    Peak Count: <strong>{{ summary.peak_traffic_count }} Requests</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+            <div class="metric-card">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="metric-label">Client Errors (4xx)</div>
+                        <div class="metric-val text-danger">{{ summary.errors_4xx }}</div>
+                    </div>
+                    <div class="icon-box bg-danger bg-opacity-10 text-danger">
+                        <i class="bi bi-shield-x"></i>
+                    </div>
+                </div>
+                <div class="mt-3 small text-muted">
+                    Unauthorized / Not Found: <strong>{{ summary.errors_4xx }} hits</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+            <div class="metric-card">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="metric-label">Server Errors (5xx)</div>
+                        <div class="metric-val text-danger">{{ summary.errors_5xx }}</div>
+                    </div>
+                    <div class="icon-box bg-danger bg-opacity-10 text-danger">
+                        <i class="bi bi-exclamation-octagon"></i>
+                    </div>
+                </div>
+                <div class="mt-3 small text-muted">
+                    Internal Errors: <strong>{{ summary.errors_5xx }} hits</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row g-4 mb-4">
+        <!-- Chart 1: Hourly Distribution -->
+        <div class="col-lg-8">
+            <div class="portal-card p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h5 class="fw-bold mb-0">Hourly Request Frequency (Peak Hours)</h5>
+                        <p class="text-muted small mb-0">Hourly distribution of 750 requests over 24-hour testing cycle</p>
+                    </div>
+                    <span class="badge bg-light text-dark border">
+                        <i class="bi bi-clock me-1"></i> Peak at {{ summary.peak_traffic_hour }}
+                    </span>
+                </div>
+                <div style="height: 300px;">
+                    <canvas id="hourlyTrafficChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart 2: Status Breakdown -->
+        <div class="col-lg-4">
+            <div class="portal-card p-4">
+                <div class="mb-3">
+                    <h5 class="fw-bold mb-0">HTTP Status Distribution</h5>
+                    <p class="text-muted small mb-0">Breakdown of 2xx, 3xx, 4xx, and 5xx responses</p>
+                </div>
+                <div style="height: 300px;">
+                    <canvas id="statusCodesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tables Row: Top Visited Pages & Top IPs -->
+    <div class="row g-4 mb-4">
+        <!-- Top Pages Table / Chart -->
+        <div class="col-lg-7">
+            <div class="portal-card p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h5 class="fw-bold mb-0">Top Requested Endpoints</h5>
+                        <p class="text-muted small mb-0">Highest frequency routes accessed by clients</p>
+                    </div>
+                    <span class="badge bg-primary">Top 6 Routes</span>
+                </div>
+                <div style="height: 250px;" class="mb-3">
+                    <canvas id="topEndpointsChart"></canvas>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-custom mb-0">
+                        <thead>
+                            <tr>
+                                <th>Endpoint URL</th>
+                                <th>Hit Count</th>
+                                <th>Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in summary.top_pages[:5] %}
+                            <tr>
+                                <td><code>{{ p.path }}</code></td>
+                                <td class="fw-bold">{{ p.count }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="progress flex-grow-1" style="height: 6px;">
+                                            <div class="progress-bar bg-primary" role="progressbar" style="width: {{ p.percentage }}%"></div>
+                                        </div>
+                                        <span class="small text-muted">{{ p.percentage }}%</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top IPs & HTTP Methods -->
+        <div class="col-lg-5">
+            <div class="portal-card p-4 h-100">
+                <h5 class="fw-bold mb-3">Unique Visitor IP Distribution</h5>
+                <p class="text-muted small mb-3">Total unique IPs observed: <strong>{{ summary.unique_ips_count }} addresses</strong></p>
+                <div class="table-responsive mb-4">
+                    <table class="table table-sm table-custom mb-0">
+                        <thead>
+                            <tr>
+                                <th>IP Address</th>
+                                <th>Requests</th>
+                                <th>Traffic Share</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ip_item in summary.top_ips[:6] %}
+                            <tr>
+                                <td><code>{{ ip_item.ip }}</code></td>
+                                <td class="fw-bold">{{ ip_item.count }}</td>
+                                <td><span class="badge bg-light text-dark border">{{ ip_item.percentage }}%</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <h6 class="fw-bold mb-2 small text-uppercase text-muted">HTTP Request Methods</h6>
+                <div class="d-flex gap-2">
+                    {% for method, count in summary.method_distribution.items() %}
+                    <div class="p-2 px-3 rounded-3 bg-light border flex-grow-1 text-center">
+                        <span class="badge bg-dark mb-1">{{ method }}</span>
+                        <div class="fw-bold text-dark">{{ count }} reqs</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filterable Raw Log Records Table -->
+    <div class="portal-card">
+        <div class="portal-card-header flex-wrap gap-2">
+            <div>
+                <h5 class="fw-bold mb-0">Web Access Log Explorer (Recent {{ logs|length }} Entries)</h5>
+                <p class="text-muted small mb-0">Filter access records by HTTP status code or request method</p>
+            </div>
+            
+            <!-- Filter Pills -->
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{{ url_for('log_analysis') }}" class="btn btn-sm {% if not selected_status and not selected_method %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                    All Logs
+                </a>
+                <a href="{{ url_for('log_analysis', status='2xx') }}" class="btn btn-sm {% if selected_status == '2xx' %}btn-success{% else %}btn-outline-success{% endif %}">
+                    2xx Success
+                </a>
+                <a href="{{ url_for('log_analysis', status='4xx') }}" class="btn btn-sm {% if selected_status == '4xx' %}btn-warning{% else %}btn-outline-warning{% endif %}">
+                    4xx Client Errors
+                </a>
+                <a href="{{ url_for('log_analysis', status='5xx') }}" class="btn btn-sm {% if selected_status == '5xx' %}btn-danger{% else %}btn-outline-danger{% endif %}">
+                    5xx Server Errors
+                </a>
+                <a href="{{ url_for('log_analysis', method='POST') }}" class="btn btn-sm {% if selected_method == 'POST' %}btn-info{% else %}btn-outline-info{% endif %}">
+                    POST Only
+                </a>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-custom align-middle">
+                <thead>
+                    <tr>
+                        <th>Timestamp (UTC)</th>
+                        <th>Client IP</th>
+                        <th>Method</th>
+                        <th>Path</th>
+                        <th>Status</th>
+                        <th>Bytes</th>
+                        <th>User Agent</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td><small class="font-monospace">{{ log.timestamp }}</small></td>
+                        <td><span class="badge bg-light text-dark border">{{ log.ip }}</span></td>
+                        <td>
+                            <span class="badge {% if log.method == 'GET' %}bg-primary{% else %}bg-info text-dark{% endif %}">
+                                {{ log.method }}
+                            </span>
+                        </td>
+                        <td><code>{{ log.path }}</code></td>
+                        <td>
+                            {% if log.status < 300 %}
+                            <span class="badge bg-success bg-opacity-15 text-success border border-success border-opacity-25">{{ log.status }}</span>
+                            {% elif log.status < 400 %}
+                            <span class="badge bg-info bg-opacity-15 text-info border border-info border-opacity-25">{{ log.status }}</span>
+                            {% elif log.status < 500 %}
+                            <span class="badge bg-warning bg-opacity-15 text-warning border border-warning border-opacity-25">{{ log.status }}</span>
+                            {% else %}
+                            <span class="badge bg-danger bg-opacity-15 text-danger border border-danger border-opacity-25">{{ log.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-muted small">{{ log.bytes }} B</td>
+                        <td><small class="text-muted text-truncate d-inline-block" style="max-width: 250px;">{{ log.user_agent }}</small></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        fetch('{{ url_for("api_logs_summary") }}')
+            .then(res => res.json())
+            .then(data => {
+                initLogCharts(data);
+            })
+            .catch(err => console.error("Error loading log charts:", err));
+    });
+</script>
+{% endblock %}

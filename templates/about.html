@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+
+{% block title %}About - AWS Cloud Internship Project{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-lg-5 py-4">
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-2 small">
+            <li class="breadcrumb-item"><a href="{{ url_for('home') }}" class="text-decoration-none">Home</a></li>
+            <li class="breadcrumb-item active" aria-current="page">About Project &amp; Developer</li>
+        </ol>
+    </nav>
+
+    <!-- Header Section -->
+    <div class="mb-4">
+        <h2 class="fw-bold mb-1">About the Developer &amp; Internship Project</h2>
+        <p class="text-muted">Cloud computing architecture, full-stack implementation details, and engineering competencies</p>
+    </div>
+
+    <div class="row g-4 mb-5">
+        <!-- Developer Profile Card -->
+        <div class="col-lg-4">
+            <div class="portal-card p-4 text-center h-100">
+                <div class="mb-3">
+                    <div class="d-inline-flex p-3 rounded-circle bg-primary bg-opacity-10 text-primary">
+                        <i class="bi bi-person-fill fs-1"></i>
+                    </div>
+                </div>
+                <h4 class="fw-bold mb-1">{{ developer_name }}</h4>
+                <p class="text-primary fw-medium small mb-3">AWS Cloud Architect &amp; DevOps Specialist Intern</p>
+                <div class="d-flex justify-content-center gap-2 mb-4">
+                    <span class="badge bg-light text-dark border"><i class="bi bi-award-fill text-warning me-1"></i> AWS Cloud Computing</span>
+                    <span class="badge bg-light text-dark border"><i class="bi bi-code-slash text-primary me-1"></i> Full-Stack</span>
+                </div>
+
+                <div class="list-group list-group-flush text-start small border rounded-3 mb-4">
+                    <div class="list-group-item d-flex justify-content-between">
+                        <span class="text-muted">Email:</span>
+                        <a href="mailto:{{ developer_email }}" class="text-decoration-none text-truncate ms-2">{{ developer_email }}</a>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between">
+                        <span class="text-muted">GitHub:</span>
+                        <a href="{{ github_repo }}" target="_blank" class="text-decoration-none">madhumitha19022-spec</a>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between">
+                        <span class="text-muted">Domain:</span>
+                        <span class="fw-bold text-dark">Cloud &amp; DevOps Engineering</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between">
+                        <span class="text-muted">Focus:</span>
+                        <span class="fw-bold text-dark">AWS Infrastructure as Code</span>
+                    </div>
+                </div>
+
+                <a href="{{ github_repo }}" target="_blank" class="btn btn-outline-dark btn-sm w-100 rounded-pill d-flex align-items-center justify-content-center gap-2">
+                    <i class="bi bi-github"></i> Visit GitHub Project Repository
+                </a>
+            </div>
+        </div>
+
+        <!-- Internship Details & Project Overview -->
+        <div class="col-lg-8">
+            <div class="portal-card p-4 h-100">
+                <h5 class="fw-bold text-primary mb-3">
+                    <i class="bi bi-briefcase-fill me-2"></i> Internship Capstone Project Overview
+                </h5>
+                <p class="text-muted leading-relaxed">
+                    This project was conceived and implemented as a rigorous capstone demonstration of <strong>AWS Cloud Architecture, Full-Stack Python Development, and DevOps Automation</strong>. The primary objective is to build a complete, resilient, and enterprise-grade Student Internship Portal, migrating away from non-standard default cloud configurations to an isolated, least-privilege, fully-monitored infrastructure.
+                </p>
+                <p class="text-muted leading-relaxed">
+                    Every architectural component was designed with strict governance principles:
+                </p>
+                <div class="row g-3 mb-4">
+                    <div class="col-sm-6">
+                        <div class="p-3 bg-light rounded-3 h-100 border">
+                            <h6 class="fw-bold text-dark mb-1"><i class="bi bi-diagram-3 text-primary me-1"></i> Custom VPC Networking</h6>
+                            <p class="text-muted small mb-0">Total control over CIDR block (<code>10.0.0.0/16</code>), dedicated public subnet (<code>10.0.1.0/24</code>), route tables, and custom Internet Gateway.</p>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="p-3 bg-light rounded-3 h-100 border">
+                            <h6 class="fw-bold text-dark mb-1"><i class="bi bi-shield-check text-success me-1"></i> Zero Hardcoded Secrets</h6>
+                            <p class="text-muted small mb-0">No AWS Access Keys or credentials are stored in code or configuration; EC2 interacts with S3 solely via IAM instance profiles.</p>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="p-3 bg-light rounded-3 h-100 border">
+                            <h6 class="fw-bold text-dark mb-1"><i class="bi bi-activity text-danger me-1"></i> Automated Monitoring</h6>
+                            <p class="text-muted small mb-0">Instant notification of CPU spikes (&gt;70%) and hardware/system failure checks via CloudWatch alarms and Amazon SNS email delivery.</p>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="p-3 bg-light rounded-3 h-100 border">
+                            <h6 class="fw-bold text-dark mb-1"><i class="bi bi-wallet2 text-success me-1"></i> Cost Governance</h6>
+                            <p class="text-muted small mb-0">100% Free Tier compliant design with automated AWS Budgets alerts to guarantee zero unwanted charges.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <h5 class="fw-bold text-dark mb-3">Core Technical Skills Demonstrated</h5>
+                <div class="d-flex flex-wrap gap-2">
+                    <span class="badge bg-primary p-2 px-3">AWS VPC &amp; Subnets</span>
+                    <span class="badge bg-primary p-2 px-3">Amazon EC2 (Linux)</span>
+                    <span class="badge bg-primary p-2 px-3">Amazon S3 Object Storage</span>
+                    <span class="badge bg-primary p-2 px-3">IAM Roles &amp; Instance Profiles</span>
+                    <span class="badge bg-primary p-2 px-3">Amazon CloudWatch Alarms</span>
+                    <span class="badge bg-primary p-2 px-3">Amazon SNS Email Dispatch</span>
+                    <span class="badge bg-primary p-2 px-3">EBS Volume Snapshots</span>
+                    <span class="badge bg-primary p-2 px-3">AWS Budgets &amp; Cost Control</span>
+                    <span class="badge bg-dark p-2 px-3">Python Flask &amp; Gunicorn</span>
+                    <span class="badge bg-dark p-2 px-3">Nginx Reverse Proxy</span>
+                    <span class="badge bg-dark p-2 px-3">Log Analysis &amp; Data Visualization</span>
+                    <span class="badge bg-dark p-2 px-3">Git &amp; GitHub Version Control</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Complete Technologies & Tools Matrix -->
+    <div class="portal-card p-4 p-md-5 mb-4">
+        <h4 class="fw-bold mb-4">Technology Stack &amp; Architectural Specifications</h4>
+        <div class="row g-4">
+            <!-- Frontend Stack -->
+            <div class="col-md-3">
+                <div class="p-3 bg-light rounded-3 h-100 border">
+                    <h6 class="fw-bold text-primary mb-3"><i class="bi bi-window-sidebar me-1"></i> Frontend Layer</h6>
+                    <ul class="list-unstyled small d-flex flex-column gap-2 text-muted mb-0">
+                        <li><strong>HTML5 / CSS3:</strong> Modern responsive design</li>
+                        <li><strong>Bootstrap 5.3:</strong> Fluid grid &amp; components</li>
+                        <li><strong>Bootstrap Icons:</strong> Vector iconography</li>
+                        <li><strong>Chart.js 4.4:</strong> High-performance interactive charts</li>
+                        <li><strong>Vanilla JavaScript:</strong> Async API polling</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Backend Stack -->
+            <div class="col-md-3">
+                <div class="p-3 bg-light rounded-3 h-100 border">
+                    <h6 class="fw-bold text-success mb-3"><i class="bi bi-server me-1"></i> Backend Layer</h6>
+                    <ul class="list-unstyled small d-flex flex-column gap-2 text-muted mb-0">
+                        <li><strong>Python 3:</strong> Modern language runtime</li>
+                        <li><strong>Flask 3.0:</strong> Lightweight WSGI web framework</li>
+                        <li><strong>Gunicorn:</strong> Production WSGI server</li>
+                        <li><strong>Boto3 1.34+:</strong> Official AWS SDK for Python</li>
+                        <li><strong>Log Analyzer:</strong> Statistical log parsing engine</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Cloud Infrastructure -->
+            <div class="col-md-3">
+                <div class="p-3 bg-light rounded-3 h-100 border">
+                    <h6 class="fw-bold text-warning mb-3"><i class="bi bi-cloud-check me-1"></i> AWS Cloud Layer</h6>
+                    <ul class="list-unstyled small d-flex flex-column gap-2 text-muted mb-0">
+                        <li><strong>Custom VPC:</strong> 10.0.0.0/16</li>
+                        <li><strong>Public Subnet:</strong> 10.0.1.0/24</li>
+                        <li><strong>Amazon EC2:</strong> t2/t3.micro (Ubuntu 24.04)</li>
+                        <li><strong>Amazon S3:</strong> Private object storage</li>
+                        <li><strong>AWS IAM:</strong> Scoped least privilege roles</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- DevOps & Monitoring -->
+            <div class="col-md-3">
+                <div class="p-3 bg-light rounded-3 h-100 border">
+                    <h6 class="fw-bold text-danger mb-3"><i class="bi bi-gear-wide-connected me-1"></i> DevOps &amp; Reliability</h6>
+                    <ul class="list-unstyled small d-flex flex-column gap-2 text-muted mb-0">
+                        <li><strong>Nginx:</strong> Reverse proxy (Port 80 &rarr; 5000)</li>
+                        <li><strong>systemd:</strong> Linux daemon service manager</li>
+                        <li><strong>Amazon CloudWatch:</strong> Metric alarms</li>
+                        <li><strong>Amazon SNS:</strong> Instant email alerting</li>
+                        <li><strong>EBS Snapshots:</strong> Automated volume backup</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

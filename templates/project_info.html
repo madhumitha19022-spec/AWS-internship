@@ -1,0 +1,277 @@
+{% extends 'base.html' %}
+
+{% block title %}Architecture &amp; Project Info - AWS Cloud Internship Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-lg-5 py-4">
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-2 small">
+            <li class="breadcrumb-item"><a href="{{ url_for('home') }}" class="text-decoration-none">Home</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Project Architecture &amp; Info</li>
+        </ol>
+    </nav>
+
+    <!-- Header Section -->
+    <div class="mb-4">
+        <h2 class="fw-bold mb-1">Architecture, Design Specifications &amp; Implementation Workflow</h2>
+        <p class="text-muted">Comprehensive technical breakdown of network infrastructure, compute, security, and storage on AWS</p>
+    </div>
+
+    <!-- Architecture Diagram Card -->
+    <div class="portal-card p-4 p-md-5 mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <span class="badge bg-primary text-uppercase letter-spacing-1 mb-1">System Topology</span>
+                <h4 class="fw-bold mb-0">End-to-End AWS Infrastructure Diagram</h4>
+            </div>
+            <a href="{{ url_for('static', filename='images/architecture.svg') }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-arrows-fullscreen me-1"></i> Open SVG
+            </a>
+        </div>
+        <div class="p-3 bg-dark rounded-4 text-center shadow-inner">
+            <img src="{{ url_for('static', filename='images/architecture.svg') }}" alt="AWS Cloud Architecture Diagram" class="img-fluid rounded-3" style="max-height: 540px;">
+        </div>
+    </div>
+
+    <!-- Section 1: Project Overview & Objectives -->
+    <div class="row g-4 mb-5">
+        <div class="col-lg-6">
+            <div class="portal-card p-4 h-100">
+                <h5 class="fw-bold text-primary mb-3">
+                    <i class="bi bi-file-earmark-text me-2"></i> Project Executive Summary
+                </h5>
+                <p class="text-muted leading-relaxed">
+                    The <strong>AWS Cloud Internship Project</strong> delivers a robust, scalable, and secure Student Internship Portal deployed on a Linux Amazon EC2 instance inside a custom-configured Amazon Virtual Private Cloud (VPC).
+                </p>
+                <p class="text-muted leading-relaxed">
+                    Designed to adhere to the <strong>AWS Well-Architected Framework</strong> across Operational Excellence, Security, Reliability, and Cost Optimization, this architecture decouples networking layers, relies strictly on temporary IAM credentials, and maintains automated snapshot backups for zero-data-loss disaster recovery.
+                </p>
+                <div class="p-3 bg-light rounded-3 border-start border-primary border-4">
+                    <strong class="text-dark small d-block mb-1">Core Deliverables Achieved:</strong>
+                    <ul class="text-muted small mb-0 ps-3">
+                        <li>Custom VPC CIDR <code>10.0.0.0/16</code> with public subnet <code>10.0.1.0/24</code></li>
+                        <li>EC2 Linux Web Server running Flask &amp; Gunicorn behind Nginx</li>
+                        <li>Amazon S3 private bucket storage with IAM instance profiles</li>
+                        <li>Amazon CloudWatch metric alarms (CPU &gt; 70%, StatusCheckFailed)</li>
+                        <li>Amazon SNS email alerts for incident dispatch</li>
+                        <li>EBS automated volume snapshot backup and restore drill</li>
+                        <li>AWS Budgets threshold governance ($1.00 USD/month safeguard)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="portal-card p-4 h-100">
+                <h5 class="fw-bold text-success mb-3">
+                    <i class="bi bi-shield-check me-2"></i> Security Design: IAM Roles vs Access Keys
+                </h5>
+                <p class="text-muted leading-relaxed">
+                    A paramount security requirement of this deployment is the <strong>absolute prohibition of hardcoded AWS Access Keys</strong> (<code>AWS_ACCESS_KEY_ID</code> / <code>AWS_SECRET_ACCESS_KEY</code>) within source code, configuration files, or server environments.
+                </p>
+                <div class="table-responsive mb-3">
+                    <table class="table table-bordered table-sm small">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Security Dimension</th>
+                                <th>Hardcoded Access Keys</th>
+                                <th class="table-success">IAM Instance Profile (Adopted)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Credential Lifespan</strong></td>
+                                <td class="text-danger">Permanent until manual rotation</td>
+                                <td class="text-success fw-bold">Automatically rotated STS tokens</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Leakage Risk</strong></td>
+                                <td class="text-danger">Catastrophic if pushed to GitHub</td>
+                                <td class="text-success fw-bold">Zero credentials stored on disk</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Scope of Access</strong></td>
+                                <td class="text-danger">Often over-permissioned</td>
+                                <td class="text-success fw-bold">Least-privilege scoped to project bucket</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Auditability</strong></td>
+                                <td class="text-muted">Difficult to trace</td>
+                                <td class="text-success fw-bold">Native CloudTrail integration</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="text-muted small mb-0">
+                    The EC2 instance requests temporary credentials dynamically via the <strong>AWS Instance Metadata Service v2 (IMDSv2)</strong>, eliminating static credential compromise vectors entirely.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 2: AWS Services Deep Dive -->
+    <div class="mb-5">
+        <div class="mb-4">
+            <h6 class="text-primary fw-bold text-uppercase letter-spacing-1">Comprehensive Architecture</h6>
+            <h3 class="fw-bold">AWS Services Configuration Details</h3>
+        </div>
+
+        <div class="row g-4">
+            <!-- 1. Custom VPC -->
+            <div class="col-md-6">
+                <div class="portal-card p-4 h-100">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span class="badge bg-primary p-2"><i class="bi bi-diagram-3 fs-5"></i></span>
+                        <div>
+                            <h5 class="fw-bold mb-0">1. Custom AWS VPC &amp; Networking</h5>
+                            <span class="text-muted small">Amazon Virtual Private Cloud</span>
+                        </div>
+                    </div>
+                    <ul class="text-muted small d-flex flex-column gap-2 mb-0">
+                        <li><strong>VPC CIDR Block:</strong> <code>10.0.0.0/16</code> providing 65,536 private IP addresses.</li>
+                        <li><strong>Public Subnet:</strong> <code>10.0.1.0/24</code> located in availability zone <code>ap-south-1a</code> with Auto-assign Public IPv4 enabled.</li>
+                        <li><strong>Internet Gateway (IGW):</strong> <code>internship-igw</code> attached to the custom VPC to provide bidirectional Internet routing.</li>
+                        <li><strong>Route Table:</strong> <code>internship-public-rt</code> configured with default destination <code>0.0.0.0/0</code> targeted at <code>internship-igw</code>.</li>
+                        <li><strong>Security Group:</strong> <code>internship-web-sg</code> allowing Inbound Port 80 (HTTP) globally and Inbound Port 22 (SSH) strictly from administrator IP.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 2. Amazon EC2 -->
+            <div class="col-md-6">
+                <div class="portal-card p-4 h-100">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span class="badge bg-warning p-2 text-dark"><i class="bi bi-cpu fs-5"></i></span>
+                        <div>
+                            <h5 class="fw-bold mb-0">2. Amazon EC2 Linux Web Host</h5>
+                            <span class="text-muted small">Elastic Compute Cloud</span>
+                        </div>
+                    </div>
+                    <ul class="text-muted small d-flex flex-column gap-2 mb-0">
+                        <li><strong>Instance Type:</strong> <code>t2.micro</code> (1 vCPU, 1 GiB RAM) Free Tier eligible compute.</li>
+                        <li><strong>Operating System:</strong> Ubuntu 24.04 LTS (HVM) with 64-bit x86 architecture.</li>
+                        <li><strong>Web Server Stack:</strong> Python 3 Flask web application served via <strong>Gunicorn WSGI</strong> running as a persistent <code>systemd</code> daemon service.</li>
+                        <li><strong>Reverse Proxy:</strong> <strong>Nginx</strong> receiving public traffic on Port 80 and reverse-proxying internally to Gunicorn on <code>127.0.0.1:5000</code>.</li>
+                        <li><strong>Health Checks:</strong> Integrated <code>/health</code> endpoint for uptime and ELB health verification.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 3. Amazon S3 -->
+            <div class="col-md-6">
+                <div class="portal-card p-4 h-100">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span class="badge bg-success p-2"><i class="bi bi-bucket fs-5"></i></span>
+                        <div>
+                            <h5 class="fw-bold mb-0">3. Amazon S3 Object Storage</h5>
+                            <span class="text-muted small">Simple Storage Service</span>
+                        </div>
+                    </div>
+                    <ul class="text-muted small d-flex flex-column gap-2 mb-0">
+                        <li><strong>Bucket Access:</strong> 100% Private bucket with <strong>Block Public Access</strong> enabled across all 4 settings.</li>
+                        <li><strong>Storage Hierarchy:</strong> Organized prefixes: <code>/logs/</code>, <code>/datasets/</code>, <code>/backups/</code>, and <code>/assets/</code>.</li>
+                        <li><strong>Permissions:</strong> Scoped strictly to the EC2 IAM Instance Profile using policy <code>InternshipS3LeastPrivilegePolicy</code>.</li>
+                        <li><strong>Data Protection:</strong> Server-Side Encryption (SSE-S3 AES-256) enabled by default.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 4. Amazon CloudWatch & SNS -->
+            <div class="col-md-6">
+                <div class="portal-card p-4 h-100">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span class="badge bg-danger p-2"><i class="bi bi-bell fs-5"></i></span>
+                        <div>
+                            <h5 class="fw-bold mb-0">4. CloudWatch Alarms &amp; SNS Alerts</h5>
+                            <span class="text-muted small">Monitoring &amp; Incident Dispatch</span>
+                        </div>
+                    </div>
+                    <ul class="text-muted small d-flex flex-column gap-2 mb-0">
+                        <li><strong>High CPU Alarm:</strong> Triggers when EC2 metric <code>CPUUtilization &gt; 70%</code> for 1 consecutive period of 5 minutes.</li>
+                        <li><strong>Status Check Alarm:</strong> Triggers when metric <code>StatusCheckFailed &gt;= 1</code> for 1 minute (system or instance failure).</li>
+                        <li><strong>SNS Topic:</strong> <code>internship-alerts-topic</code> broadcasting instant alert payloads.</li>
+                        <li><strong>Email Subscription:</strong> Direct notification sent to <code>madhumitha19022@gmail.com</code> with one-click email confirmation.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 5. EBS Snapshots -->
+            <div class="col-md-6">
+                <div class="portal-card p-4 h-100">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span class="badge bg-secondary p-2"><i class="bi bi-hdd-stack fs-5"></i></span>
+                        <div>
+                            <h5 class="fw-bold mb-0">5. EBS Snapshots &amp; Disaster Recovery</h5>
+                            <span class="text-muted small">Elastic Block Store Point-in-Time Backup</span>
+                        </div>
+                    </div>
+                    <ul class="text-muted small d-flex flex-column gap-2 mb-0">
+                        <li><strong>Point-in-Time Backup:</strong> Snapshot taken of the root EBS volume capturing OS, dependencies, and configuration.</li>
+                        <li><strong>Tagging:</strong> <code>Name: Internship-Portal-Root-Backup</code>, <code>Environment: Production</code>.</li>
+                        <li><strong>Restore Procedure:</strong> Create a new EBS volume from snapshot &rarr; attach to EC2 or launch replacement instance with identical state.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 6. AWS Budgets -->
+            <div class="col-md-6">
+                <div class="portal-card p-4 h-100">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span class="badge bg-success p-2"><i class="bi bi-wallet2 fs-5"></i></span>
+                        <div>
+                            <h5 class="fw-bold mb-0">6. AWS Budgets &amp; Cost Control</h5>
+                            <span class="text-muted small">Financial Governance &amp; Free Tier Compliance</span>
+                        </div>
+                    </div>
+                    <ul class="text-muted small d-flex flex-column gap-2 mb-0">
+                        <li><strong>Cost Limit:</strong> Strict monthly budget limit established at <strong>$1.00 USD</strong>.</li>
+                        <li><strong>Threshold Alerts:</strong> Email triggered when actual spend reaches 80% ($0.80) and 100% ($1.00).</li>
+                        <li><strong>Free Tier Adherence:</strong> Deliberately omitted chargeable managed resources: zero NAT Gateways ($32/mo saved), zero ALBs ($18/mo saved), and zero managed RDS databases.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 3: Implementation Workflow -->
+    <div class="portal-card p-4 p-md-5 mb-4">
+        <h4 class="fw-bold mb-4">Step-by-Step Implementation Workflow</h4>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="p-3 bg-light rounded-3 h-100 border">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="badge bg-primary rounded-circle">1</span>
+                        <h6 class="fw-bold mb-0">Network &amp; Security Setup</h6>
+                    </div>
+                    <p class="text-muted small mb-0">
+                        Provision custom VPC, create public subnet, instantiate Internet Gateway, build route table with 0.0.0.0/0 route, and define security groups with least-privilege ingress.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-3 bg-light rounded-3 h-100 border">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="badge bg-primary rounded-circle">2</span>
+                        <h6 class="fw-bold mb-0">Compute &amp; App Deployment</h6>
+                    </div>
+                    <p class="text-muted small mb-0">
+                        Launch Ubuntu t2.micro EC2, attach IAM instance role, clone GitHub repository, configure systemd Gunicorn service, and configure Nginx reverse proxy.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-3 bg-light rounded-3 h-100 border">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="badge bg-primary rounded-circle">3</span>
+                        <h6 class="fw-bold mb-0">Monitoring &amp; Governance</h6>
+                    </div>
+                    <p class="text-muted small mb-0">
+                        Set up S3 storage bucket, create CloudWatch CPU &amp; status check alarms with SNS email triggers, take root volume EBS snapshot, and set up AWS Budget alert.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
